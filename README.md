@@ -723,7 +723,7 @@ $body = Flight::request()->getBody();
 
 ## JSON Input
 
-If you send request with the type `application/json` and the data `{"id": 123}` it will be availabe
+If you send a request with the type `application/json` and the data `{"id": 123}` it will be available
 from the `data` property:
 
 ```php
@@ -824,9 +824,11 @@ Flight::set('flight.log_errors', true);
 The following is a list of all the available configuration settings:
 
     flight.base_url - Override the base url of the request. (default: null)
+    flight.case_sensitive - Case sensitive matching for URLs. (default: false)
     flight.handle_errors - Allow Flight to handle all errors internally. (default: true)
     flight.log_errors - Log errors to the web server's error log file. (default: false)
     flight.views.path - Directory containing view template files. (default: ./views)
+    flight.views.extension - View template file extension. (default: .php)
 
 # Framework Methods
 
