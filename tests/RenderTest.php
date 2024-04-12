@@ -1,36 +1,34 @@
 <?php
-/**
- * Flight: An extensible micro-framework.
- *
- * @copyright   Copyright (c) 2012, Mike Cao <mike@mikecao.com>
- * @license     MIT, http://flightphp.com/license
- */
 
-require_once 'vendor/autoload.php';
-require_once __DIR__.'/../flight/Flight.php';
+declare(strict_types=1);
 
-class RenderTest extends PHPUnit_Framework_TestCase
+namespace tests;
+
+use flight\Engine;
+use PHPUnit\Framework\TestCase;
+
+class RenderTest extends TestCase
 {
-    /**
-     * @var \flight\Engine
-     */
-    private $app;
+    private Engine $app;
 
-    function setUp() {
-        $this->app = new \flight\Engine();
-        $this->app->set('flight.views.path', __DIR__.'/views');
+    protected function setUp(): void
+    {
+        $this->app = new Engine();
+        $this->app->set('flight.views.path', __DIR__ . '/views');
     }
 
     // Render a view
-    function testRenderView(){
-        $this->app->render('hello', array('name' => 'Bob'));
+    public function testRenderView()
+    {
+        $this->app->render('hello', ['name' => 'Bob']);
 
         $this->expectOutputString('Hello, Bob!');
     }
 
     // Renders a view into a layout
-    function testRenderLayout(){
-        $this->app->render('hello', array('name' => 'Bob'), 'content');
+    public function testRenderLayout()
+    {
+        $this->app->render('hello', ['name' => 'Bob'], 'content');
         $this->app->render('layouts/layout');
 
         $this->expectOutputString('<html>Hello, Bob!</html>');

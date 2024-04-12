@@ -1,41 +1,40 @@
 <?php
-/**
- * Flight: An extensible micro-framework.
- *
- * @copyright   Copyright (c) 2012, Mike Cao <mike@mikecao.com>
- * @license     MIT, http://flightphp.com/license
- */
 
-require_once 'vendor/autoload.php';
-require_once __DIR__.'/../flight/autoload.php';
+declare(strict_types=1);
 
-class AutoloadTest extends PHPUnit_Framework_TestCase
+namespace tests;
+
+use flight\Engine;
+use tests\classes\User;
+use PHPUnit\Framework\TestCase;
+
+class AutoloadTest extends TestCase
 {
-    /**
-     * @var \flight\Engine
-     */
-    private $app;
+    private Engine $app;
 
-    function setUp() {
-        $this->app = new \flight\Engine();
-        $this->app->path(__DIR__.'/classes');
+    protected function setUp(): void
+    {
+        $this->app = new Engine();
+        $this->app->path(__DIR__ . '/classes');
     }
 
     // Autoload a class
-    function testAutoload(){
-        $this->app->register('user', 'User');
+    public function testAutoload()
+    {
+        $this->app->register('user', User::class);
 
         $loaders = spl_autoload_functions();
 
         $user = $this->app->user();
 
-        $this->assertTrue(sizeof($loaders) > 0);
-        $this->assertTrue(is_object($user));
-        $this->assertEquals('User', get_class($user));
+        self::assertTrue(count($loaders) > 0);
+        self::assertIsObject($user);
+        self::assertInstanceOf(User::class, $user);
     }
 
     // Check autoload failure
-    function testMissingClass(){
+    public function testMissingClass()
+    {
         $test = null;
         $this->app->register('test', 'NonExistentClass');
 
@@ -43,6 +42,6 @@ class AutoloadTest extends PHPUnit_Framework_TestCase
             $test = $this->app->test();
         }
 
-        $this->assertEquals(null, $test);
+        self::assertNull($test);
     }
 }

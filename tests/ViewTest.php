@@ -1,28 +1,26 @@
 <?php
-/**
- * Flight: An extensible micro-framework.
- *
- * @copyright   Copyright (c) 2012, Mike Cao <mike@mikecao.com>
- * @license     MIT, http://flightphp.com/license
- */
 
-require_once 'vendor/autoload.php';
-require_once __DIR__.'/../flight/autoload.php';
+declare(strict_types=1);
 
-class ViewTest extends PHPUnit_Framework_TestCase
+namespace tests;
+
+use Exception;
+use flight\template\View;
+use PHPUnit\Framework\TestCase;
+
+class ViewTest extends TestCase
 {
-    /**
-     * @var \flight\template\View
-     */
-    private $view;
+    private View $view;
 
-    function setUp() {
-        $this->view = new \flight\template\View();
-        $this->view->path = __DIR__.'/views';
+    protected function setUp(): void
+    {
+        $this->view = new View();
+        $this->view->path = __DIR__ . '/views';
     }
 
     // Set template variables
-    function testVariables() {
+    public function testVariables()
+    {
         $this->view->set('test', 123);
 
         $this->assertEquals(123, $this->view->get('test'));
@@ -32,31 +30,65 @@ class ViewTest extends PHPUnit_Framework_TestCase
 
         $this->view->clear('test');
 
-        $this->assertEquals(null, $this->view->get('test'));
+        $this->assertNull($this->view->get('test'));
+    }
+
+    public function testMultipleVariables()
+    {
+        $this->view->set([
+            'test' => 123,
+            'foo' => 'bar'
+        ]);
+
+        $this->assertEquals(123, $this->view->get('test'));
+        $this->assertEquals('bar', $this->view->get('foo'));
+
+        $this->view->clear();
+
+        $this->assertNull($this->view->get('test'));
+        $this->assertNull($this->view->get('foo'));
     }
 
     // Check if template files exist
-    function testTemplateExists() {
+    public function testTemplateExists()
+    {
         $this->assertTrue($this->view->exists('hello.php'));
         $this->assertTrue(!$this->view->exists('unknown.php'));
     }
 
     // Render a template
-    function testRender() {
-        $this->view->render('hello', array('name' => 'Bob'));
+    public function testRender()
+    {
+        $this->view->render('hello', ['name' => 'Bob']);
 
         $this->expectOutputString('Hello, Bob!');
     }
 
+    public function testRenderBadFilePath()
+    {
+        $this->expectException(Exception::class);
+        $exception_message = sprintf(
+            'Template file not found: %s%sviews%sbadfile.php',
+            __DIR__,
+            DIRECTORY_SEPARATOR,
+            DIRECTORY_SEPARATOR
+        );
+        $this->expectExceptionMessage($exception_message);
+
+        $this->view->render('badfile');
+    }
+
     // Fetch template output
-    function testFetch() {
-        $output = $this->view->fetch('hello', array('name' => 'Bob'));
+    public function testFetch()
+    {
+        $output = $this->view->fetch('hello', ['name' => 'Bob']);
 
         $this->assertEquals('Hello, Bob!', $output);
     }
 
     // Default extension
-    function testTemplateWithExtension() {
+    public function testTemplateWithExtension()
+    {
         $this->view->set('name', 'Bob');
 
         $this->view->render('hello.php');
@@ -65,12 +97,59 @@ class ViewTest extends PHPUnit_Framework_TestCase
     }
 
     // Custom extension
-    function testTemplateWithCustomExtension() {
+    public function testTemplateWithCustomExtension()
+    {
         $this->view->set('name', 'Bob');
         $this->view->extension = '.html';
 
         $this->view->render('world');
 
         $this->expectOutputString('Hello world, Bob!');
+    }
+
+    public function testGetTemplateAbsolutePath()
+    {
+        $tmpfile = tmpfile();
+        $this->view->extension = '';
+        $file_path = stream_get_meta_data($tmpfile)['uri'];
+        $this->assertEquals($file_path, $this->view->getTemplate($file_path));
+    }
+
+    public function testE()
+    {
+        $this->expectOutputString('&lt;script&gt;');
+        $result = $this->view->e('<script>');
+        $this->assertEquals('&lt;script&gt;', $result);
+    }
+
+    public function testeNoNeedToEscape()
+    {
+        $this->expectOutputString('script');
+        $result = $this->view->e('script');
+        $this->assertEquals('script', $result);
+    }
+
+    public function testNormalizePath(): void
+    {
+        $viewMock = new class extends View
+        {
+            public static function normalizePath(string $path, string $separator = DIRECTORY_SEPARATOR): string
+            {
+                return parent::normalizePath($path, $separator);
+            }
+        };
+
+        $this->assertSame(
+            'C:/xampp/htdocs/libs/Flight/core/index.php',
+            $viewMock::normalizePath('C:\xampp\htdocs\libs\Flight/core/index.php', '/')
+        );
+        $this->assertSame(
+            'C:\xampp\htdocs\libs\Flight\core\index.php',
+            $viewMock::normalizePath('C:/xampp/htdocs/libs/Flight\core\index.php', '\\')
+        );
+        $this->assertSame(
+            'C:°xampp°htdocs°libs°Flight°core°index.php',
+            $viewMock::normalizePath('C:/xampp/htdocs/libs/Flight\core\index.php', '°')
+        );
     }
 }
